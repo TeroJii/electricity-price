@@ -1,0 +1,35 @@
+---
+title: "Sähkö"
+author: "TeroJii"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+
+```
+
+
+# Alkuvuoden lämpötila vaihtelut
+
+Simuloidaan alkuvuoden keskilämpötiloja historiallisten havaintojen perusteella.
+
+```{r}
+
+N <- 50
+
+# Keskiarvot Kaisaniemen havaintoaseman keskilt. 1991-2020
+tammikuu <- rnorm(N, mean = -3.1, sd = 3)
+helmikuu <- rnorm(N, mean = -3.8, sd = 3)
+maaliskuu <- rnorm(N, mean = -0.7, sd = 3)
+
+data.frame(tammikuu, helmikuu, maaliskuu, x = 1:50) %>%
+  pivot_longer(cols = -x, names_to = "kuukausi", values_to = "temp") %>% 
+  ggplot(aes(y = temp, x = x)) +
+  geom_line() +
+  facet_grid(. ~kuukausi)
+```
+
