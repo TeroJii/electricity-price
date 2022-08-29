@@ -97,6 +97,10 @@ data.frame(consumption = kulutukset) %>%
   labs(x = "Consumption (kwh)")
 
 
+# Vuoden hinta
+year_price <- 12000*0.35
+
+
 ## Arvio hinnasta eri sähkön hinnoilla
 
 data.frame(consumption = kulutukset) %>% 
@@ -111,11 +115,12 @@ data.frame(consumption = kulutukset) %>%
   mutate(tuntihinta = gsub(pattern = "s", replacement = "", x = tuntihinta)) %>% 
   mutate(tuntihinta = paste(tuntihinta, "senttiä/kWh")) %>% 
   ggplot(aes(x = kok_hinta)) +
-  geom_histogram(fill = "red", color = "black") +
+  geom_histogram(aes(fill = (kok_hinta > year_price)), color = "black") +
   ggtitle("Arvio sähkönkulutuksesta", subtitle =  "Tammi-maaliskuu -akselilla") +
-  labs(x = "Total price (€)") +
+  labs(x = "Total price (€)", fill = "Kalliimpaa kuin vuoden kiinteä 0,35€/kWh") +
   facet_wrap(facets = "tuntihinta") +
-  geom_vline(xintercept = 4000, lty =2)
+  geom_vline(xintercept = year_price, lty =2) +
+  theme(legend.position = "top")
 ```
 
 
