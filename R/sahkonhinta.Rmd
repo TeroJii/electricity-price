@@ -24,17 +24,22 @@ Simuloidaan alkuvuoden keskilämpötiloja historiallisten havaintojen perusteell
 N <- 50
 
 # Keskiarvot Kaisaniemen havaintoaseman keskilt. 1991-2020
+syyskuu <- rnorm(N, mean = 12.7, sd = 2.5)
+lokakuu <- rnorm(N, mean = 6.6, sd = 2.5)
+marraskuu <- rnorm(N, mean = 2.4, sd = 2.5)
+joulukuu <- rnorm(N, mean = -0.7, sd = 3)
 tammikuu <- rnorm(N, mean = -3.1, sd = 3)
 helmikuu <- rnorm(N, mean = -3.8, sd = 3)
 maaliskuu <- rnorm(N, mean = -0.7, sd = 3)
 
-data.frame(tammikuu, helmikuu, maaliskuu, x = 1:50) %>%
+data.frame(syyskuu, lokakuu, marraskuu, joulukuu, tammikuu, helmikuu, maaliskuu, x = 1:50) %>%
   pivot_longer(cols = -x, names_to = "kuukausi", values_to = "temp") %>% 
-  mutate(kuukausi = as.factor(kuukausi) %>% fct_relevel(c("tammikuu", "helmikuu", "maaliskuu"))) %>% 
+  mutate(kuukausi = as.factor(kuukausi) %>% 
+           fct_relevel(c("syyskuu", "lokakuu", "marraskuu", "joulukuu", "tammikuu", "helmikuu", "maaliskuu"))) %>% 
   ggplot(aes(y = temp, x = x)) +
   geom_line() +
   geom_hline(yintercept = 0, color = "red", lty = 2) +
-  facet_grid(. ~kuukausi)
+  facet_wrap(facets = "kuukausi")
 ```
 
 
@@ -98,7 +103,7 @@ data.frame(consumption = kulutukset) %>%
 
 
 # Vuoden hinta
-year_price <- 12000*0.35
+year_price <- 12000*0.4
 
 
 ## Arvio hinnasta eri sähkön hinnoilla
@@ -106,21 +111,53 @@ year_price <- 12000*0.35
 data.frame(consumption = kulutukset) %>% 
   mutate(s30 = consumption*0.3,
          s35 = consumption*0.35,
+         s40 = consumption*0.4,
          s45 = consumption*0.45,
          s50 = consumption*0.5,
          s60 = consumption*0.6,
          s70 = consumption*0.7,
-         s80 = consumption*0.8) %>% 
+         s80 = consumption*0.8,
+         s100 = consumption*1) %>% 
   pivot_longer(cols = -consumption, names_to = "tuntihinta", values_to = "kok_hinta") %>% 
   mutate(tuntihinta = gsub(pattern = "s", replacement = "", x = tuntihinta)) %>% 
   mutate(tuntihinta = paste(tuntihinta, "senttiä/kWh")) %>% 
   ggplot(aes(x = kok_hinta)) +
   geom_histogram(aes(fill = (kok_hinta > year_price)), color = "black") +
   ggtitle("Arvio sähkönkulutuksesta", subtitle =  "Tammi-maaliskuu -akselilla") +
-  labs(x = "Total price (€)", fill = "Kalliimpaa kuin vuoden kiinteä 0,35€/kWh") +
+  labs(x = "Total price (€)", fill = paste("Kalliimpaa kuin vuoden kiinteä", year_price, "€")) +
   facet_wrap(facets = "tuntihinta") +
   geom_vline(xintercept = year_price, lty =2) +
   theme(legend.position = "top")
 ```
 
+# Kulutus välillä syys-maaliskuu
+
+
+```{r}
+
+#Kulutus välillä syys-maaliskuu
+kulutukset2 <- replicate(N, expr = {
+  # average temp
+  syyskuu <- rnorm(1, mean = 12.7, sd = 2.5)
+  lokakuu <- rnorm(1, mean = 6.6, sd = 2.5)
+  marraskuu <- rnorm(1, mean = 2.4, sd = 2.5)
+  joulukuu <- rnorm(1, mean = -0.7, sd = 3)
+  tammikuu <- rnorm(1, mean = -3.1, sd = 3)
+  helmikuu <- rnorm(1, mean = -3.8, sd = 3)
+  maaliskuu <- rnorm(1, mean = -0.7, sd = 3)
+  
+  # Lineaarimallin ennuste sähkön kulutuksesta
+  preds <- predict(energy_model, data.frame(temps = c(syyskuu, lokakuu, marraskuu, joulukuu, tammikuu, helmikuu, maaliskuu)))
+  
+  # Summa kolmelle kuukaudelle
+  sum(preds)
+})
+
+
+data.frame(consumption = kulutukset2) %>% 
+  ggplot(aes(x = consumption)) +
+  geom_histogram(fill = "red", color = "black") +
+  ggtitle("Arvio sähkönkulutuksesta", subtitle =  "Syys-maaliskuu -akselilla") +
+  labs(x = "Consumption (kwh)")
+```
 
